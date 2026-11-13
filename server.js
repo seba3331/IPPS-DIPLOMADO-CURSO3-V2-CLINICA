@@ -1,25 +1,15 @@
-import express from 'express'
-import cors from 'cors'
+import app from './app.js'
+import { conectar } from './config/db.js'
 
-import { conectar } from 'config/db.js'
- 
-import { authRoutes } from './routes/auth.route.js'
-import { pacienteRoutes } from './routes/paciente.route.js'
+const iniciar = async () => {
+    await conectar()
+    const puerto = process.env.PORT || 3001
+    app.listen(puerto, () => {
+        console.log(`API lista en http://localhost:${puerto}`)
+    })
+}
 
-const app = express()
-
-
-app.use(cors())
-app.use(express.json())
-
-app.use('/auth', authRoutes)
-//http://localhost:3001/auth/registrar/
-//http://localhost:3001/auth/login/
-
-app.use('/pacientes', pacienteRoutes)
-
-await conectar()
-
-app.listen(3001, ()=>{
-    console.log('levantmos al apu')
+iniciar().catch((error) => {
+    console.error('No se pudo iniciar la API:', error.message)
+    process.exitCode = 1
 })

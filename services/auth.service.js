@@ -17,8 +17,8 @@ const firmarToken = (medico) =>{
   
 
 export const registrar = async ( datos ) =>{
-    const medico = await Medico.create(datos )
- const token = firmarToken(medico)
+  const medico = await Medico.create(datos)
+  const token = firmarToken(medico)
   return { medico, token }
 }
 
@@ -30,7 +30,6 @@ export const login = async (email, password) =>{
     const ok = await medico.compararPassword(password)
     if(!ok) return null
 
-   const token = firmarToken(medico)
+  const token = firmarToken(medico)
   return { medico, token }
-
 }

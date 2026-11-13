@@ -2,6 +2,12 @@
   "name": "clinica",
   "version": "1.0.0",
   "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check app.js && node --check server.js && node --check config/db.js && node --check config/jwt.js && node --check controllers/auth.controller.js && node --check controllers/paciente.controller.js && node --check middlewares/errorHandler.js && node --check middlewares/proteger.js && node --check models/ficha.model.js && node --check models/medico.model.js && node --check models/paciente.model.js && node --check routes/auth.routes.js && node --check routes/medico.route.js && node --check routes/paciente.route.js && node --check services/auth.service.js"
+  },
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^3.0.3",
