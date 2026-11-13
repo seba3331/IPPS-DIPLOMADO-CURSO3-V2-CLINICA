@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "Clínica API - flujo de rúbrica",
+    "description": "Registra dos médicos y demuestra 401, acceso propio a /medicos/:id/pacientes, 403 entre médicos y 409 por identificación duplicada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "runId", "value": "" },
+    { "key": "medicoAId", "value": "" },
+    { "key": "medicoBId", "value": "" },
+    { "key": "tokenA", "value": "" },
+    { "key": "tokenB", "value": "" },
+    { "key": "pacienteId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Registrar médico A",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.collectionVariables.set('runId', Date.now().toString());"]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Médico A registrado (201)', function () { pm.response.to.have.status(201); });",
+              "const data = pm.response.json();",
+              "pm.collectionVariables.set('medicoAId', data.medico._id);",
+              "pm.collectionVariables.set('tokenA', data.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Ana Demo\",\n  \"especialidad\": \"Medicina general\",\n  \"email\": \"ana.{{runId}}@example.com\",\n  \"password\": \"clave123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/registro"
+      }
+    },
+    {
+      "name": "2. Registrar médico B",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Médico B registrado (201)', function () { pm.response.to.have.status(201); });",
+              "const data = pm.response.json();",
+              "pm.collectionVariables.set('medicoBId', data.medico._id);",
+              "pm.collectionVariables.set('tokenB', data.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Bruno Demo\",\n  \"especialidad\": \"Pediatría\",\n  \"email\": \"bruno.{{runId}}@example.com\",\n  \"password\": \"clave123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/auth/registro"
+      }
+    },
+    {
+      "name": "3. Pacientes sin token (401)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Sin token devuelve 401', function () { pm.response.to.have.status(401); });"] } }],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "url": "{{baseUrl}}/pacientes"
+      }
+    },
+    {
+      "name": "4. Médico A crea paciente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Paciente creado (201)', function () { pm.response.to.have.status(201); });",
+              "pm.collectionVariables.set('pacienteId', pm.response.json()._id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenA}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"identificacion\": \"PAC-{{runId}}-001\",\n  \"nombre\": \"Paciente Demo\",\n  \"telefono\": \"555-0101\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/pacientes"
+      }
+    },
+    {
+      "name": "5. Médico A consulta /:id/pacientes (200)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('La lista propia responde 200', function () { pm.response.to.have.status(200); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenA}}", "type": "string" }] },
+        "method": "GET",
+        "url": "{{baseUrl}}/medicos/{{medicoAId}}/pacientes"
+      }
+    },
+    {
+      "name": "6. Médico B intenta consultar pacientes de A (403)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('El acceso cruzado devuelve 403', function () { pm.response.to.have.status(403); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenB}}", "type": "string" }] },
+        "method": "GET",
+        "url": "{{baseUrl}}/medicos/{{medicoAId}}/pacientes"
+      }
+    },
+    {
+      "name": "7. Médico B intenta abrir paciente de A (403)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('El paciente de otro médico devuelve 403', function () { pm.response.to.have.status(403); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenB}}", "type": "string" }] },
+        "method": "GET",
+        "url": "{{baseUrl}}/pacientes/{{pacienteId}}"
+      }
+    },
+    {
+      "name": "8. Identificación duplicada (409)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('La identificación duplicada devuelve 409', function () { pm.response.to.have.status(409); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenB}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"identificacion\": \"PAC-{{runId}}-001\",\n  \"nombre\": \"Registro duplicado\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/pacientes"
+      }
+    }
+  ]
+}

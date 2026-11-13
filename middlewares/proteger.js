@@ -13,9 +13,10 @@ export const proteger = (req, res, next) => {
   try {
     const payload = jwt.verify(token, JWT_SECRET)
     req.medico = payload
-    next()
+    return next()
   } catch {
     return res.status(401).json({
-        error: 'Token inválido o expirado'
+      error: 'Token inválido o expirado'
     })
-}}
+  }
+}
